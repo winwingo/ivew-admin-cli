@@ -4,26 +4,28 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import store from './store'
-import iView from 'iview'
+import ViewUI from 'view-design'
 import i18n from '@/locale'
 import config from '@/config'
 import importDirective from '@/directive'
-import { directive as clickOutside } from 'v-click-outside-x'
 import installPlugin from '@/plugin'
+import platEnums from '@/enums/PlatEnums.js'
+
+import 'view-design/dist/styles/iview.css';
 import './index.less'
+import '@/css/common.less'
 import '@/assets/icons/iconfont.css'
-import TreeTable from 'tree-table-vue'
-import VOrgTree from 'v-org-tree'
-import 'v-org-tree/dist/v-org-tree.css'
+import VueDND from 'awe-dnd'
+
 // 实际打包时应该不引入mock
 /* eslint-disable */
-if (process.env.NODE_ENV !== 'production') require('@/mock')
+// if (process.env.NODE_ENV !== 'production') require('@/mock')
 
-Vue.use(iView, {
+
+Vue.use(VueDND);
+Vue.use(ViewUI, {
   i18n: (key, value) => i18n.t(key, value)
 })
-Vue.use(TreeTable)
-Vue.use(VOrgTree)
 /**
  * @description 注册admin内置插件
  */
@@ -36,11 +38,14 @@ Vue.config.productionTip = false
  * @description 全局注册应用配置
  */
 Vue.prototype.$config = config
+
+Vue.prototype.platEnums = platEnums;
+
+
 /**
  * 注册指令
  */
 importDirective(Vue)
-Vue.directive('clickOutside', clickOutside)
 
 /* eslint-disable no-new */
 new Vue({

@@ -1,14 +1,9 @@
 <template>
-  <div class="user-avatar-dropdown">
+  <div class="user-avator-dropdown">
     <Dropdown @on-click="handleClick">
-      <Badge :dot="!!messageUnreadCount">
-        <Avatar :src="userAvatar"/>
-      </Badge>
+      <Avatar :src="userAvator"/>
       <Icon :size="18" type="md-arrow-dropdown"></Icon>
       <DropdownMenu slot="list">
-        <DropdownItem name="message">
-          消息中心<Badge style="margin-left: 10px" :count="messageUnreadCount"></Badge>
-        </DropdownItem>
         <DropdownItem name="logout">退出登录</DropdownItem>
       </DropdownMenu>
     </Dropdown>
@@ -18,40 +13,30 @@
 <script>
 import './user.less'
 import { mapActions } from 'vuex'
+import config from '@/config'
+import Cookies from 'js-cookie'
+
 export default {
   name: 'User',
   props: {
-    userAvatar: {
+    userAvator: {
       type: String,
       default: ''
-    },
-    messageUnreadCount: {
-      type: Number,
-      default: 0
     }
   },
   methods: {
     ...mapActions([
       'handleLogOut'
     ]),
-    logout () {
-      this.handleLogOut().then(() => {
-        this.$router.push({
-          name: 'login'
-        })
-      })
-    },
-    message () {
-      this.$router.push({
-        name: 'message_page'
-      })
-    },
     handleClick (name) {
       switch (name) {
-        case 'logout': this.logout()
-          break
-        case 'message': this.message()
-          break
+        case 'logout':
+          this.handleLogOut().then(() => {
+            // 退出登录自动跳转home页
+            const env = process.env.VUE_APP_ENV
+            Cookies.set("token", null, {expires: 0, domain: config.domainPath[env]});
+            window.location.href = config.ssoUrl[env]
+          })
       }
     }
   }

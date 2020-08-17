@@ -3,10 +3,10 @@
 </template>
 
 <script>
-import Icons from '_c/icons'
+import Icons from '@/components/icons'
 export default {
   name: 'CommonIcon',
-  components: { Icons },
+  components: {Icons},
   props: {
     type: {
       type: String,

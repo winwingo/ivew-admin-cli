@@ -11,6 +11,8 @@ import {
   localSave,
   localRead
 } from '@/libs/util'
+import { loadMenu } from '@/libs/router-util'
+import beforeClose from '@/router/before-close'
 import { saveErrorLogger } from '@/api/data'
 import router from '@/router'
 import routers from '@/router/routers'
@@ -29,21 +31,22 @@ export default {
   state: {
     breadCrumbList: [],
     tagNavList: [],
-    homeRoute: {},
+    homeRoute: getHomeRoute(routers, homeName),
     local: localRead('local'),
     errorList: [],
     hasReadErrorPage: false
   },
   getters: {
-    menuList: (state, getters, rootState) => getMenuByRouter(routers, rootState.user.access),
+    menuList: (state, getters, rootState) => getMenuByRouter(loadMenu(), rootState.user.access),
     errorCount: state => state.errorList.length
   },
   mutations: {
+    updateMenuList(state, route) {
+      router.addRoutes(route);
+      state.menuList = route;
+    },
     setBreadCrumb (state, route) {
       state.breadCrumbList = getBreadCrumbList(route, state.homeRoute)
-    },
-    setHomeRoute (state, routes) {
-      state.homeRoute = getHomeRoute(routes, homeName)
     },
     setTagNavList (state, list) {
       let tagList = []
@@ -63,7 +66,15 @@ export default {
       let tag = state.tagNavList.filter(item => routeEqual(item, route))
       route = tag[0] ? tag[0] : null
       if (!route) return
-      closePage(state, route)
+      if (route.meta && route.meta.beforeCloseName && route.meta.beforeCloseName in beforeClose) {
+        new Promise(beforeClose[route.meta.beforeCloseName]).then(close => {
+          if (close) {
+            closePage(state, route)
+          }
+        })
+      } else {
+        closePage(state, route)
+      }
     },
     addTag (state, { route, type = 'unshift' }) {
       let router = getRouteTitleHandled(route)
@@ -98,9 +109,9 @@ export default {
         userId,
         userName
       }
-      saveErrorLogger(info).then(() => {
-        commit('addError', data)
-      })
+      // saveErrorLogger(info).then(() => {
+      //   commit('addError', data)
+      // })
     }
   }
 }

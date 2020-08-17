@@ -1,12 +1,12 @@
 <template>
   <div>
-   <!-- <div v-if="searchable && searchPlace === 'top'" class="search-con search-con-top">
+    <div v-if="searchable && searchPlace === 'top'" class="search-con search-con-top">
       <Select v-model="searchKey" class="search-col">
         <Option v-for="item in columns" v-if="item.key !== 'handle'" :value="item.key" :key="`search-col-${item.key}`">{{ item.title }}</Option>
       </Select>
-      <Input @on-change="handleClear" clearable placeholder="输入关键字搜索" class="search-input" v-model="searchValue"/>
-      <Button @click="handleSearch" class="search-btn" type="primary"><Icon type="search"/>&nbsp;&nbsp;搜索</Button>
-    </div>-->
+      <Input @on-change="handleClear" clearable placeholder="输入关键字查詢" class="search-input" v-model="searchValue"/>
+      <Button @click="handleSearch" class="search-btn" type="primary"><Icon type="search"/>&nbsp;&nbsp;查询</Button>
+    </div>
     <Table
       ref="tablesMain"
       :data="insideTableData"
@@ -43,7 +43,7 @@
         <Option v-for="item in columns" v-if="item.key !== 'handle'" :value="item.key" :key="`search-col-${item.key}`">{{ item.title }}</Option>
       </Select>
       <Input placeholder="输入关键字搜索" class="search-input" v-model="searchValue"/>
-      <Button class="search-btn" type="primary"><Icon type="search"/>&nbsp;&nbsp;搜索</Button>
+      <Button class="search-btn" type="primary"><Icon type="search"/>&nbsp;&nbsp;查询</Button>
     </div>
     <a id="hrefToExportTable" style="display: none;width: 0px;height: 0px;"></a>
   </div>

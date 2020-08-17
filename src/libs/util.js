@@ -1,19 +1,33 @@
 import Cookies from 'js-cookie'
 // cookie保存的天数
-import config from '@/config'
 import { forEach, hasOneOf, objEqual } from '@/libs/tools'
-const { title, cookieExpires, useI18n } = config
 
 export const TOKEN_KEY = 'token'
+export const QA_TOKEN_KEY = 'qaToken'
+export const MCHID_KEY = 'xcmchid'
 
 export const setToken = (token) => {
-  Cookies.set(TOKEN_KEY, token, { expires: cookieExpires || 1 })
+  debugger
+  Cookies.set(TOKEN_KEY, token, { expires: cookieExpires || 1, domain: 'qa.xianchengkeji.cn' })
+  Cookies.set(TOKEN_KEY, token, { expires: cookieExpires || 1, domain: 'xianchengkeji.cn' })
 }
 
 export const getToken = () => {
   const token = Cookies.get(TOKEN_KEY)
   if (token) return token
   else return false
+}
+
+export const getQaToken = () => {
+  const token = Cookies.get(QA_TOKEN_KEY)
+  if (token) return token
+  else return false
+}
+
+export const getMchid = () => {
+  const mchid = Cookies.get(MCHID_KEY)
+  if (mchid) return mchid
+  else return 6001
 }
 
 export const hasChild = (item) => {
@@ -58,13 +72,10 @@ export const getBreadCrumbList = (route, homeRoute) => {
   let routeMetched = route.matched
   if (routeMetched.some(item => item.name === homeRoute.name)) return [homeItem]
   let res = routeMetched.filter(item => {
-    return item.meta === undefined || !item.meta.hideInBread
+    return item.meta === undefined || !item.meta.hide
   }).map(item => {
-    let meta = { ...item.meta }
-    if (meta.title && typeof meta.title === 'function') {
-      meta.__titleIsFunction__ = true
-      meta.title = meta.title(route)
-    }
+    let meta = {...item.meta}
+    if (meta.title && typeof meta.title === 'function') meta.title = meta.title(route)
     let obj = {
       icon: (item.meta && item.meta.icon) || '',
       name: item.name,
@@ -75,18 +86,16 @@ export const getBreadCrumbList = (route, homeRoute) => {
   res = res.filter(item => {
     return !item.meta.hideInMenu
   })
-  return [{ ...homeItem, to: homeRoute.path }, ...res]
+  return [{...homeItem, to: homeRoute.path}, ...res]
 }
 
 export const getRouteTitleHandled = (route) => {
-  let router = { ...route }
-  let meta = { ...route.meta }
+  let router = {...route}
+  let meta = {...route.meta}
   let title = ''
   if (meta.title) {
-    if (typeof meta.title === 'function') {
-      meta.__titleIsFunction__ = true
-      title = meta.title(router)
-    } else title = meta.title
+    if (typeof meta.title === 'function') title = meta.title(router)
+    else title = meta.title
   }
   meta.title = title
   router.meta = meta
@@ -94,11 +103,9 @@ export const getRouteTitleHandled = (route) => {
 }
 
 export const showTitle = (item, vm) => {
-  let { title, __titleIsFunction__ } = item.meta
-  if (!title) return
-  if (useI18n) {
-    if (title.includes('{{') && title.includes('}}') && useI18n) title = title.replace(/({{[\s\S]+?}})/, (m, str) => str.replace(/{{([\s\S]*)}}/, (m, _) => vm.$t(_.trim())))
-    else if (__titleIsFunction__) title = item.meta.title
+  let title = item.meta.title
+  if (vm.$config.useI18n) {
+    if (title.includes('{{') && title.includes('}}') && vm.$config.useI18n) title = title.replace(/({{[\s\S]+?}})/, (m, str) => str.replace(/{{([\s\S]*)}}/, (m, _) => vm.$t(_.trim())))
     else title = vm.$t(item.name)
   } else title = (item.meta && item.meta.title) || item.name
   return title
@@ -143,11 +150,24 @@ export const getHomeRoute = (routers, homeName = 'home') => {
  * @param {*} newRoute 新添加的路由原信息对象
  * @description 如果该newRoute已经存在则不再添加
  */
+// export const getNewTagList = (list, newRoute) => {
+//   const { name, path, meta } = newRoute
+//   let newList = [...list]
+//   if (newList.findIndex(item => item.name === name) >= 0) return newList
+//   else newList.push({ name, path, meta })
+//   return newList
+// }
+
 export const getNewTagList = (list, newRoute) => {
   const { name, path, meta } = newRoute
   let newList = [...list]
-  if (newList.findIndex(item => item.name === name) >= 0) return newList
-  else newList.push({ name, path, meta })
+  let _index = newList.findIndex(item => item.name === name)
+  if (_index >= 0) {
+    if (newList[_index].path !== path) {    // 如果name已经存在,判断path值
+      newList[_index].path = path          // 如果不一样,修改path值
+    }
+    return newList
+  } else newList.push({ name, path, meta })
   return newList
 }
 
@@ -205,6 +225,7 @@ export const getNextRoute = (list, route) => {
     res = getHomeRoute(list)
   } else {
     const index = list.findIndex(item => routeEqual(item, route))
+    console.log(route, index, list.length)
     if (index === list.length - 1) res = list[list.length - 2]
     else res = list[index + 1]
   }
@@ -350,50 +371,33 @@ export const localRead = (key) => {
   return localStorage.getItem(key) || ''
 }
 
-// scrollTop animation
-export const scrollTop = (el, from = 0, to, duration = 500, endCallback) => {
-  if (!window.requestAnimationFrame) {
-    window.requestAnimationFrame = (
-      window.webkitRequestAnimationFrame ||
-      window.mozRequestAnimationFrame ||
-      window.msRequestAnimationFrame ||
-      function (callback) {
-        return window.setTimeout(callback, 1000 / 60)
-      }
-    )
-  }
-  const difference = Math.abs(from - to)
-  const step = Math.ceil(difference / duration * 50)
-
-  const scroll = (start, end, step) => {
-    if (start === end) {
-      endCallback && endCallback()
-      return
-    }
-
-    let d = (start + step > end) ? end : start + step
-    if (start > end) {
-      d = (start - step < end) ? end : start - step
-    }
-
-    if (el === window) {
-      window.scrollTo(d, d)
-    } else {
-      el.scrollTop = d
-    }
-    window.requestAnimationFrame(() => scroll(d, end, step))
-  }
-  scroll(from, to, step)
+export const sessionSave = (key, value) => {
+  sessionStorage.setItem(key, value)
 }
 
-/**
- * @description 根据当前跳转的路由设置显示在浏览器标签的title
- * @param {Object} routeItem 路由对象
- * @param {Object} vm Vue实例
- */
-export const setTitle = (routeItem, vm) => {
-  const handledRoute = getRouteTitleHandled(routeItem)
-  const pageTitle = showTitle(handledRoute, vm)
-  const resTitle = pageTitle ? `${title} - ${pageTitle}` : title
-  window.document.title = resTitle
+export const sessionRead = (key) => {
+  return sessionStorage.getItem(key)
+}
+
+export function formatDate(date, fmt) {
+  if (/(y+)/.test(fmt)) {
+    fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length));
+  }
+  let o = {
+    'M+': date.getMonth() + 1,
+    'd+': date.getDate(),
+    'h+': date.getHours(),
+    'm+': date.getMinutes(),
+    's+': date.getSeconds()
+  };
+  for (let k in o) {
+    if (new RegExp(`(${k})`).test(fmt)) {
+      let str = o[k] + '';
+      fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? str : padLeftZero(str));
+    }
+  }
+  return fmt;
+}
+function padLeftZero(str) {
+  return ('00' + str).substr(str.length);
 }
